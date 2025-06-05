@@ -42,7 +42,7 @@ jobs:
           conda env create -f MLProject/conda.yaml
           # Activate the environment name from conda.yaml
           source $(conda info --base)/etc/profile.d/conda.sh
-          conda activate $(grep '^name:' MLProject/conda.yaml | cut -d' ' -f2) # Dynamically get env name
+          conda activate $(grep '^name:' MLProject/conda.yaml | cut -d':' -f2 | tr -d ' ') # Dynamically get env name
 
       - name: Log in to MLflow Tracking Server (DagsHub)
         run: |
