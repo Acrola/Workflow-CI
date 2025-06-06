@@ -45,6 +45,9 @@ jobs:
           # Activate the specific environment defined in conda.yaml
           conda activate mlflow-env
 
+          # Install MLflow explicitly to ensure the CLI is available
+          conda install -c conda-forge mlflow
+          
           # Run MLflow project within the activated environment
           MLFLOW_RUN_ID=$(mlflow run . --experiment-name "Diabetes_Prediction_CI_Retraining" | tail -n 1 | grep -oP '(?<=run_id=)[a-f0-9]+')          echo "Newly created MLflow Run ID from CI retraining: $MLFLOW_RUN_ID"
 
