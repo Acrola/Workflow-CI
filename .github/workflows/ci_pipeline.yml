@@ -18,60 +18,52 @@ env:
   DOCKER_REPO: acrola/proyek_sml_kenny
 
 jobs:
-  train-and-deploy:
-    runs-on: ubuntu-latest
+  build-and-deploy:
+    runs-on: ubuntu-latest # Use the latest Ubuntu runner
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4 # Action to check out your repository code
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install Conda (if not already installed on runner)
-        uses: conda-incubator/setup-miniconda@v3
+      - name: Setup Conda Environment
+        uses: conda-incubator/setup-miniconda@v3 # Action to set up Miniconda
         with:
           auto-update-conda: true
-          python-version: 3.12
+          python-version: '3.12' # Ensure this matches your conda.yaml
+          auto-activate-base: false # Do not auto-activate base env to avoid conflicts
 
-      - name: Install Project Dependencies
-        # This will create a conda environment from MLProject/conda.yaml
+      - name: Install Project Dependencies and Run MLflow Project
+        id: run_mlflow_project
+        working-directory: MLProject # Set the working directory for this entire step
         run: |
-          conda env create -f MLProject/conda.yaml
-          # Activate the environment name from conda.yaml
+          # Create the conda environment from the yaml file
+          conda env create -f conda.yaml || true
+
+          # Initialize conda for the current shell session
           source $(conda info --base)/etc/profile.d/conda.sh
-          conda activate $(grep '^name:' MLProject/conda.yaml | cut -d':' -f2 | tr -d ' ') # Dynamically get env name
 
-      - name: Log in to MLflow Tracking Server (DagsHub)
-        run: |
-          echo "Logging into MLflow tracking server: $MLFLOW_TRACKING_URI"
-          
-      - name: Run MLflow Project (Automatic Retraining)
-        id: run_mlflow_project # Store output from this step
-        working-directory: MLProject # Run from the MLProject directory
-        run: |
-          source $(conda info --base)/etc/profile.d/conda.sh
-          conda activate $(grep '^name:' conda.yaml | cut -d' ' -f2)
+          # Activate the specific environment defined in conda.yaml
+          conda activate mlflow-env
 
-          # Execute the MLflow Project's 'main' entry point.
-          # This will run the `if __name__ == "__main__":` block in modelling.py.
-
+          # Run MLflow project within the activated environment
+          MLFLOW_RUN_ID=$(mlflow run . --no-conda --no-tracking-uri --experiment-name "Diabetes_Prediction_CI_Retraining" | tail -n 1 | grep -oP '(?<=run_id=)[a-f0-9]+')
           echo "Newly created MLflow Run ID from CI retraining: $MLFLOW_RUN_ID"
-          echo "retrained_model_run_id=$MLFLOW_RUN_ID" >> $GITHUB_OUTPUT # Make it available to subsequent steps
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ env.DOCKER_USERNAME }}
-          password: ${{ env.DOCKER_PASSWORD }}
+          # Set an output variable named 'retrained_model_run_id'
+          echo "retrained_model_run_id=$MLFLOW_RUN_ID" >> $GITHUB_OUTPUT
 
-      - name: Build and Push Docker Image for Newly Retrained Model
+      - name: Build and Push Docker Image
+        working-directory: MLProject # Ensure working directory is correct for Dockerfile context
         run: |
-          # The mlflow models build-docker command uses the run ID of the model
-          # that was just created in the "Run MLflow Project" step.
-          MODEL_URI="runs:/${{ steps.run_mlflow_project.outputs.retrained_model_run_id }}/model"
-          echo "Building Docker image for model URI: $MODEL_URI"
+          # Login to Docker Hub using the secrets
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login --username "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-          mlflow models build-docker --model-uri "$MODEL_URI" --name "${{ env.DOCKER_REPO }}" --tag latest
+          # Build the Docker image using the MLflow run ID obtained from the previous step
+          # The --model-uri "runs:/<run_id>/model" tells MLflow which model artifact to package
+          mlflow models build-docker \
+            --model-uri "runs:/${{ steps.run_mlflow_project.outputs.retrained_model_run_id }}/model" \
+            --name "$DOCKER_REPO" \
+            --enable-mlserver # This option includes MLflow's MLServer deployment components
+
+          # Push the built Docker image to Docker Hub
+          docker push "$DOCKER_REPO":latest # Pushes the image tagged as 'latest' (you can use specific tags if you implement versioning)
