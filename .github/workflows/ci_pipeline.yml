@@ -45,9 +45,6 @@ jobs:
           # Activate the specific environment defined in conda.yaml
           conda activate mlflow-env
 
-          # Install MLflow explicitly to ensure the CLI is available
-          conda install -c conda-forge mlflow
-
           python -c "
           import mlflow
           from mlflow.tracking import MlflowClient
@@ -72,7 +69,7 @@ jobs:
               exit(1)
           
           parent_run = runs[0]
-          print(f'Found parent tuning run: {parent_run.info.run_id} (Name: {parent_run.data.tags.get(\'mlflow.runName\', \'N/A\')})')
+          print(f'Found parent tuning run: {parent_run.info.run_id} (Name: {parent_run.data.tags.get("mlflow.runName", "N/A")})')
           
           # --- Retrieve the Best Model Run ID ---
           # This checks if the parent run logged the ID of its best child run as a parameter.
