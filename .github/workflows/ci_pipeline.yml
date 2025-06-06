@@ -36,9 +36,14 @@ jobs:
         id: get_best_run # This ID remains the same
         working-directory: MLProject
         run: |
-          # Initialize conda for this shell session and activate the environment
+          # Initialize conda for the current shell session
           source $(conda info --base)/etc/profile.d/conda.sh
-          conda activate mlflow-env # Activate environment to run python and mlflow.tracking
+
+          # Activate the specific environment defined in conda.yaml
+          conda activate mlflow-env
+
+          # Install MLflow explicitly to ensure the CLI is available
+          conda install -c conda-forge mlflow
 
           python -c "
           import mlflow
@@ -52,10 +57,8 @@ jobs:
           PARENT_RUN_NAME = 'ParameterGrid_Hyperparameter_Tuning_Parent_Run' # <--- This is updated with your specific run name!
           
           # --- Find the Parent Tuning Run by its exact name (mlflow.runName tag) ---
-          # We search across all experiments (experiment_ids=None) for simplicity,
-          # or you could specify a known experiment_id if you prefer.
           runs = client.search_runs(
-              experiment_ids=None, # Search all experiments
+              experiment_ids=1,
               filter_string=f\"tags.mlflow.runName = '{PARENT_RUN_NAME}'\", # Filter by the exact run name
               order_by=['start_time DESC'], # Get the most recent one if there are multiple with the same name
               max_results=1
