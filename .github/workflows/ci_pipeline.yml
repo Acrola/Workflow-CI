@@ -46,8 +46,7 @@ jobs:
           conda activate mlflow-env
 
           # Run MLflow project within the activated environment
-          MLFLOW_RUN_ID=$(mlflow run . --no-tracking-uri --experiment-name "Diabetes_Prediction_CI_Retraining" | tail -n 1 | grep -oP '(?<=run_id=)[a-f0-9]+')
-          echo "Newly created MLflow Run ID from CI retraining: $MLFLOW_RUN_ID"
+          MLFLOW_RUN_ID=$(mlflow run . --experiment-name "Diabetes_Prediction_CI_Retraining" | tail -n 1 | grep -oP '(?<=run_id=)[a-f0-9]+')          echo "Newly created MLflow Run ID from CI retraining: $MLFLOW_RUN_ID"
 
           # Set an output variable named 'retrained_model_run_id'
           echo "retrained_model_run_id=$MLFLOW_RUN_ID" >> $GITHUB_OUTPUT
