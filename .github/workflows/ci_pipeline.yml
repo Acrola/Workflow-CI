@@ -33,9 +33,12 @@ jobs:
           auto-activate-base: false # Do not auto-activate base env to avoid conflicts
 
       - name: Get Best Model Run ID from Parent Tuning Run
-        id: get_best_run # This ID remains the same
+        id: get_best_run
         working-directory: MLProject
         run: |
+          # Create the conda environment from the yaml file
+          conda env create -f conda.yaml || true
+
           # Initialize conda for the current shell session
           source $(conda info --base)/etc/profile.d/conda.sh
 
