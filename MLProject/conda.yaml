@@ -1,8 +1,8 @@
 channels:
 - conda-forge
 dependencies:
-- python=3.13.3
-- pip<=25.1.1
+- python=3.11
+- pip
 - pip:
   - mlflow==2.22.0
   - cloudpickle==3.1.1
