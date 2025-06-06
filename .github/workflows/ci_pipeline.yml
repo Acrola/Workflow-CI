@@ -45,7 +45,7 @@ jobs:
           # Activate the specific environment defined in conda.yaml
           conda activate mlflow-env
 
-          python -c """
+          python <<EOF
           import mlflow
           from mlflow.tracking import MlflowClient
           import os
@@ -85,8 +85,8 @@ jobs:
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
               f.write(f"retrieved_model_run_id={retrieved_run_id}\n")
           print(f"Set GITHUB_OUTPUT: retrieved_model_run_id={retrieved_run_id}")
-          """ # End of Python script
-
+          EOF
+          
       - name: Build and Push Docker Image
         working-directory: MLProject # Ensure working directory is correct for Dockerfile context
         run: |
