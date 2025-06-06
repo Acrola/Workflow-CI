@@ -28,13 +28,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13.3'
+          python-version: '3.12'
 
       - name: Install Conda (if not already installed on runner)
         uses: conda-incubator/setup-miniconda@v3
         with:
           auto-update-conda: true
-          python-version: 3.13.3
+          python-version: 3.12
 
       - name: Install Project Dependencies
         # This will create a conda environment from MLProject/conda.yaml
