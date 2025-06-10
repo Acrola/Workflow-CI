@@ -10,15 +10,6 @@ from sklearn.metrics import (
 )
 from sklearn.model_selection import train_test_split
 
-import dagshub
-dagshub.init(
-    repo_owner='Acrola',
-    repo_name='my-first-repo',
-    mlflow=True,
-    token=os.environ.get("MLFLOW_TRACKING_PASSWORD"),
-    user=os.environ.get("MLFLOW_TRACKING_USERNAME")
-)
-
 def train_and_log_model(X_train, y_train, X_test, y_test, params, model_name="RandomForestClassifier"):
     """
     Trains a RandomForestClassifier with given parameters and manually logs results to MLflow.
