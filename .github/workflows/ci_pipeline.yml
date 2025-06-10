@@ -8,6 +8,7 @@ on:
   workflow_dispatch:
 
 env:
+env:
   MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
   MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_TRACKING_USERNAME }}
   MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_TRACKING_PASSWORD }}
@@ -66,7 +67,8 @@ jobs:
           conda activate mlflow-env
           echo "Running MLflow training script (modelling.py) to create a new model..."
           NEW_MLFLOW_RUN_ID=$(python modelling.py)
-          python modelling.py | tail -n 1 > run_id.txt
+          echo "$NEW_MLFLOW_RUN_ID" > run_id.txt
+          echo "New MLflow Run ID created: $NEW_MLFLOW_RUN_ID"
 
       - name: Get latest MLflow run_id
         id: get_model_run_id_for_deploy
