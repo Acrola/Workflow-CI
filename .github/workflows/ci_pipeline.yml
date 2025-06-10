@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - test
   workflow_dispatch:
 
 env:
@@ -73,53 +74,19 @@ jobs:
           RUN_ID=$(cat run_id.txt)
           echo "Latest MLflow Run ID: $RUN_ID" >&2
 
-      - name: Download MLflow Artifacts
-        working-directory: MLProject
-        env:
-          LOCAL_LFS_ARTIFACTS_DIR_ENV: mlflow_artifacts_for_lfs
-          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
-          MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_TRACKING_USERNAME }}
-          MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_TRACKING_PASSWORD }}
-        run: |
-          RUN_ID=$(cat run_id.txt)
-          export RUN_ID
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global user.name "github-actions[bot]"
-          git lfs install --local 
-          rm -rf "$LOCAL_LFS_ARTIFACTS_DIR_ENV"
-          mkdir -p "$LOCAL_LFS_ARTIFACTS_DIR_ENV"
-          source $(conda info --base)/etc/profile.d/conda.sh
-          conda activate mlflow-env
-          export MLFLOW_TRACKING_URI
-          export MLFLOW_TRACKING_USERNAME
-          export MLFLOW_TRACKING_PASSWORD
-          python <<EOF
-          import mlflow.artifacts
-          import os
-
-          run_id = os.environ['RUN_ID']
-          local_artifacts_dir = os.environ['LOCAL_LFS_ARTIFACTS_DIR_ENV']
-          mlflow.artifacts.download_artifacts(
-              artifact_uri=f"runs:/{run_id}/artifacts",
-              dst_path=local_artifacts_dir
-          )
-          print(f"All artifacts downloaded successfully to {local_artifacts_dir}")
-          EOF
-
       - name: Upload to GitHub LFS
         working-directory: MLProject
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          LOCAL_LFS_ARTIFACTS_DIR="mlflow_artifacts_for_lfs"
-          git lfs track "${LOCAL_LFS_ARTIFACTS_DIR}/**"
+          git lfs track "model/**"
           git add .gitattributes || true 
-          git add "${LOCAL_LFS_ARTIFACTS_DIR}/"
+          git add "model/"
           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
           if ! git diff-index --quiet HEAD; then
-            git commit -m "chore: Add/update all MLflow artifacts from CI run ${{ github.run_id }}"
+            git commit -m "chore: Pushed retrained model from CI run ${{ github.run_id }}"
             git push origin HEAD:${{ github.ref }}
-            echo "Successfully pushed all MLflow artifacts to GitHub LFS."
+            echo "Successfully pushed retrained model to GitHub LFS."
           else
             echo "No new MLflow artifact changes to commit to GitHub LFS."
           fi
@@ -127,11 +94,10 @@ jobs:
       - name: Build Docker Model
         working-directory: MLProject
         run: |
-          RUN_ID=$(cat run_id.txt)
           source $(conda info --base)/etc/profile.d/conda.sh
           conda activate mlflow-env
           mlflow models build-docker \
-            --model-uri "runs:/$RUN_ID/model" \
+            --model-uri "model" \
             --name "$DOCKER_REPO" \
             --enable-mlserver
 
