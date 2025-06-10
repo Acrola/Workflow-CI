@@ -2,6 +2,7 @@ import mlflow
 import pandas as pd
 import time
 import os
+import sys
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score, roc_auc_score,
@@ -22,7 +23,7 @@ def train_and_log_model(X_train, y_train, X_test, y_test, params, model_name="Ra
     Returns:
         dict: A dictionary containing key metrics and the trained model.
     """
-    print(f"  Training model with params: {params}")
+    print(f"  Training model with params: {params}", file=sys.stderr)
 
     # --- 1. Manually Log Hyperparameters (same as autolog) ---
     mlflow.log_param("bootstrap", params.get("bootstrap", True))
@@ -52,7 +53,7 @@ def train_and_log_model(X_train, y_train, X_test, y_test, params, model_name="Ra
     end_time = time.time()
     training_duration = end_time - start_time
     mlflow.log_metric("training_duration_seconds", training_duration)
-    print(f"  Training took {training_duration:.2f} seconds.")
+    print(f"  Training took {training_duration:.2f} seconds.", file=sys.stderr)
 
     # Predict probabilities for log_loss and roc_auc
     y_pred_proba = model.predict_proba(X_test)
@@ -65,7 +66,7 @@ def train_and_log_model(X_train, y_train, X_test, y_test, params, model_name="Ra
     mlflow.log_metric("test_precision_score", precision_score(y_test, y_pred))
     mlflow.log_metric("test_recall_score", recall_score(y_test, y_pred))
     mlflow.log_metric("test_roc_auc", roc_auc_score(y_test, y_pred_proba[:, 1]))
-    print(f"  Test Accuracy: {accuracy_score(y_test, y_pred):.4f}, F1: {f1_score(y_test, y_pred):.4f}, ROC AUC: {roc_auc_score(y_test, y_pred_proba[:, 1]):.4f}")
+    print(f"  Test Accuracy: {accuracy_score(y_test, y_pred):.4f}, F1: {f1_score(y_test, y_pred):.4f}, ROC AUC: {roc_auc_score(y_test, y_pred_proba[:, 1]):.4f}", file=sys.stderr)
     # Also log training metrics
     mlflow.log_metric("training_accuracy_score", accuracy_score(y_train, model.predict(X_train)))
     mlflow.log_metric("training_f1_score", f1_score(y_train, model.predict(X_train)))
@@ -73,7 +74,7 @@ def train_and_log_model(X_train, y_train, X_test, y_test, params, model_name="Ra
     mlflow.log_metric("training_precision_score", precision_score(y_train, model.predict(X_train)))
     mlflow.log_metric("training_recall_score", recall_score(y_train, model.predict(X_train)))
     mlflow.log_metric("training_roc_auc", roc_auc_score(y_train, model.predict_proba(X_train)[:, 1]))
-    print(f"  Training Accuracy: {accuracy_score(y_train, model.predict(X_train)):.4f}, F1: {f1_score(y_train, model.predict(X_train)):.4f}, ROC AUC: {roc_auc_score(y_train, model.predict_proba(X_train)[:, 1]):.4f}")
+    print(f"  Training Accuracy: {accuracy_score(y_train, model.predict(X_train)):.4f}, F1: {f1_score(y_train, model.predict(X_train)):.4f}, ROC AUC: {roc_auc_score(y_train, model.predict_proba(X_train)[:, 1]):.4f}", file=sys.stderr)
 
 
     # --- 4. Manually Log Specificity (2nd Additional Metric) ---
@@ -81,13 +82,13 @@ def train_and_log_model(X_train, y_train, X_test, y_test, params, model_name="Ra
     # Handle potential division by zero if (tn + fp) is 0
     specificity = tn / (tn + fp) if (tn + fp) != 0 else 0.0
     mlflow.log_metric("test_specificity", specificity)
-    print(f"  Test Accuracy: {accuracy_score(y_test, y_pred):.4f}, F1: {f1_score(y_test, y_pred):.4f}, Specificity: {specificity:.4f}")
+    print(f"  Test Accuracy: {accuracy_score(y_test, y_pred):.4f}, F1: {f1_score(y_test, y_pred):.4f}, Specificity: {specificity:.4f}", file=sys.stderr)
 
 
     # --- 5. Log the Model Artifact ---
     # Save model under the current MLflow run as an artifact.
     mlflow.sklearn.log_model(model, "model", signature=mlflow.models.infer_signature(X_test, y_pred))
-    print("  Model artifact logged.")
+    print("  Model artifact logged.", file=sys.stderr)
 
     # Return key results to the tuning script for comparison
     return {
@@ -113,7 +114,7 @@ if __name__ == "__main__":
     client = mlflow.tracking.MlflowClient()
 
     with mlflow.start_run(run_name="CI_Automated_Retrain_Run_Dynamic_Params") as ci_run:
-        print("--- Starting CI Automated Retraining with Dynamic Parameters ---")
+        print("--- Starting CI Automated Retraining with Dynamic Parameters ---", file=sys.stderr)
 
         # 1. Load the dataset
         try:
@@ -192,11 +193,12 @@ if __name__ == "__main__":
                         for k, v in best_child_run.data.params.items()
                         if k in model_params_to_extract
                     }
+                    print(f"Retrieved best parameters from run {best_child_run_id}: {best_retrain_params}", file=sys.stderr)
                     mlflow.log_param("retrained_from_best_run_id", best_child_run_id) # Log source run ID
 
         except Exception as e:
-            print(f"An error occurred while retrieving best parameters from MLflow: {e}")
-            print("Proceeding with default parameters as a fallback.")
+            print(f"An error occurred while retrieving best parameters from MLflow: {e}", file=sys.stderr)
+            print("Proceeding with default parameters as a fallback.", file=sys.stderr)
             best_retrain_params = {
                 'n_estimators': 100, 'max_depth': 10, 'min_samples_leaf': 1,
                 'max_features': 'sqrt', 'min_samples_split': 2
@@ -210,4 +212,6 @@ if __name__ == "__main__":
 
         # 3. Call training function with the retrieved parameters
         train_and_log_model(X_train, y_train, X_test, y_test, best_retrain_params)
-        print(ci_run.info.run_id)  # Print the current run's ID
+        print("--- CI Automated Retraining Complete ---", file=sys.stderr)
+        print(ci_run.info.run_id)  # Print only the run ID to stdout
+
