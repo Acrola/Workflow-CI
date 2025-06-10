@@ -176,7 +176,12 @@ if __name__ == "__main__":
                         'oob_score', 'verbose', 'warm_start'
                     ]
                     best_retrain_params = {
-                        k: (int(v) if k in ['n_estimators', 'max_depth', 'min_samples_leaf', 'min_samples_split'] else v)
+                        k: (
+                            int(v) if k in ['n_estimators', 'max_depth', 'min_samples_leaf', 'min_samples_split']
+                            else True if v == 'True'
+                            else False if v == 'False'
+                            else v
+                        )
                         for k, v in best_child_run.data.params.items()
                         if k in model_params_to_extract
                     }
