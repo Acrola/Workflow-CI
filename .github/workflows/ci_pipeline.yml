@@ -74,7 +74,7 @@ jobs:
           echo "Latest MLflow Run ID: $RUN_ID" >&2
 
       - name: Upload to GitHub LFS
-        working-directory: MLProject
+        working-directory: .
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
