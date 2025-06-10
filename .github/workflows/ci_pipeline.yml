@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - test
   workflow_dispatch:
 
 env:
@@ -56,6 +57,17 @@ jobs:
           source $(conda info --base)/etc/profile.d/conda.sh
           conda activate mlflow-env
           pip install -r requirements.txt
+
+      - name: Debug MLflow environment variables
+        working-directory: MLProject
+        run: |
+          echo "MLFLOW_TRACKING_URI=$MLFLOW_TRACKING_URI"
+          echo "MLFLOW_TRACKING_USERNAME=$MLFLOW_TRACKING_USERNAME"
+          if [ -z "$MLFLOW_TRACKING_PASSWORD" ]; then
+            echo "MLFLOW_TRACKING_PASSWORD is NOT set"
+          else
+            echo "MLFLOW_TRACKING_PASSWORD is set"
+          fi
 
       - name: Run mlflow project
         id: run_mlflow_project
