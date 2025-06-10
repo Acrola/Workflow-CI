@@ -26,6 +26,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          
+      - name: Debug MLflow secrets at top
+        run: |
+          echo "MLFLOW_TRACKING_USERNAME=$MLFLOW_TRACKING_USERNAME"
+          echo "MLFLOW_TRACKING_PASSWORD is ${MLFLOW_TRACKING_PASSWORD:+set}"
 
       - name: Setup Conda Environment
         uses: conda-incubator/setup-miniconda@v3
