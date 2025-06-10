@@ -4,8 +4,10 @@ on:
   push:
     branches:
       - main
+      - test
   workflow_dispatch:
 
+env:
 env:
   MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
   MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_TRACKING_USERNAME }}
@@ -57,17 +59,6 @@ jobs:
           conda activate mlflow-env
           pip install -r requirements.txt
 
-      - name: Debug MLflow environment variables
-        working-directory: MLProject
-        run: |
-          echo "MLFLOW_TRACKING_URI=$MLFLOW_TRACKING_URI"
-          echo "MLFLOW_TRACKING_USERNAME=$MLFLOW_TRACKING_USERNAME"
-          if [ -z "$MLFLOW_TRACKING_PASSWORD" ]; then
-            echo "MLFLOW_TRACKING_PASSWORD is NOT set"
-          else
-            echo "MLFLOW_TRACKING_PASSWORD is set"
-          fi
-
       - name: Run mlflow project
         id: run_mlflow_project
         working-directory: MLProject
@@ -76,24 +67,19 @@ jobs:
           conda activate mlflow-env
           echo "Running MLflow training script (modelling.py) to create a new model..."
           NEW_MLFLOW_RUN_ID=$(python modelling.py)
-          if [ -z "$NEW_MLFLOW_RUN_ID" ]; then
-            echo "Error: modelling.py did not return an MLflow run ID."
-            exit 1
-          fi
-          echo "New MLflow Run ID created: $NEW_MLFLOW_RUN_ID"
-          echo "new_model_run_id=$NEW_MLFLOW_RUN_ID" >> "$GITHUB_OUTPUT"
+          python modelling.py | tail -n 1 > run_id.txt
 
       - name: Get latest MLflow run_id
         id: get_model_run_id_for_deploy
+        working-directory: MLProject
         run: |
-          DEPLOY_RUN_ID="${{ steps.run_mlflow_project.outputs.new_model_run_id }}"
-          echo "Using MLflow Run ID for deployment: $DEPLOY_RUN_ID"
-          echo "retrieved_model_run_id=$DEPLOY_RUN_ID" >> "$GITHUB_OUTPUT"
+          RUN_ID=$(cat run_id.txt)
+          echo "MLFLOW_RUN_ID_FOR_DEPLOY=$RUN_ID" >> $GITHUB_ENV
+          echo "Exported MLflow Run ID: $RUN_ID"
 
       - name: Download MLflow Artifacts
         working-directory: MLProject
         env:
-          MLFLOW_RUN_ID_FOR_DEPLOY: ${{ steps.get_model_run_id_for_deploy.outputs.retrieved_model_run_id }}
           LOCAL_LFS_ARTIFACTS_DIR_ENV: mlflow_artifacts_for_lfs
         run: |
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
