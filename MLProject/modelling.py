@@ -22,6 +22,9 @@ def train_and_log_model(X_train, y_train, X_test, y_test, params, model_name="Ra
     Returns:
         dict: A dictionary containing key metrics and the trained model.
     """
+    # Remove all variants of 'random_state' key (case-insensitive, whitespace-stripped)
+    params = {k: v for k, v in params.items() if k.strip().lower() != "random_state"}
+    print("Params before model creation:", params)
     print(f"  Training model with params: {params}")
 
     # --- 1. Manually Log Hyperparameters (same as autolog) ---
