@@ -1,4 +1,3 @@
-# modelling.py
 import mlflow
 import pandas as pd
 import time
@@ -41,10 +40,12 @@ def train_and_log_model(X_train, y_train, X_test, y_test, params, model_name="Ra
     mlflow.log_param("n_estimators", params.get("n_estimators", 100))
     mlflow.log_param("n_jobs", params.get("n_jobs", None))
     mlflow.log_param("oob_score", params.get("oob_score", False))
-    mlflow.log_param("random_state", params.get("random_state", 42)) # For reproducibility
+    mlflow.log_param("random_state", params.get("random_state"))
     mlflow.log_param("verbose", params.get("verbose", 0))
     mlflow.log_param("warm_start", params.get("warm_start", False))
 
+    params = params.copy() # Create a copy to avoid modifying the original dictionary
+    params.pop("random_state", None) # Remove random_state from params to avoid logging it as a hyperparameter
     model = RandomForestClassifier(random_state=42, **params) # Apply the passed parameters
 
     # --- 2. Manually Log Training Time (1st Additional Metric) ---
