@@ -65,7 +65,7 @@ jobs:
           source $(conda info --base)/etc/profile.d/conda.sh
           conda activate mlflow-env
           echo "Running MLflow training script (modelling.py) to create a new model..."
-          NEW_MLFLOW_RUN_ID=$(python modelling.py)
+          NEW_MLFLOW_RUN_ID=$(python modelling.py | grep -oE '^[a-f0-9]{32}$' > run_id.txt)
           echo "$NEW_MLFLOW_RUN_ID" > run_id.txt
 
       - name: Get latest MLflow run_id
