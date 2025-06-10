@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - test
   workflow_dispatch:
 
 env:
@@ -23,37 +22,42 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
       - name: Setup Conda Environment
         uses: conda-incubator/setup-miniconda@v3
         with:
           auto-update-conda: true
           python-version: '3.12'
           auto-activate-base: false
-          
+
+      - name: Check Env
+        run: |
+          echo "Current Working Directory: $(pwd)"
+          source $(conda info --base)/etc/profile.d/conda.sh
+          conda --version
+          python --version
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y git-lfs
+
       - name: Create Conda Environment
         working-directory: MLProject
         run: |
           source $(conda info --base)/etc/profile.d/conda.sh
           conda env create -f conda.yaml || conda env update -f conda.yaml
 
-      - name: Check Env
-        run: |
-          echo "Current Working Directory: $(pwd)"
-          source $(conda info --base)/etc/profile.d/conda.sh
-          conda activate mlflow-env
-          echo "Python Version: $(python --version)"
-          echo "Pip List:"
-          pip list
-          echo "MLflow Version: $(mlflow --version)"
-
-      - name: Install Python Dependencies
+      - name: Install Python dependencies
         working-directory: MLProject
         run: |
           source $(conda info --base)/etc/profile.d/conda.sh
           conda activate mlflow-env
           pip install -r requirements.txt
 
-      - name: Run MLflow Project
+      - name: Run mlflow project
         id: run_mlflow_project
         working-directory: MLProject
         run: |
@@ -74,9 +78,6 @@ jobs:
           DEPLOY_RUN_ID="${{ steps.run_mlflow_project.outputs.new_model_run_id }}"
           echo "Using MLflow Run ID for deployment: $DEPLOY_RUN_ID"
           echo "retrieved_model_run_id=$DEPLOY_RUN_ID" >> "$GITHUB_OUTPUT"
-
-      - name: Install Git LFS
-        run: sudo apt-get update && sudo apt-get install -y git-lfs
 
       - name: Download MLflow Artifacts
         working-directory: MLProject
@@ -104,7 +105,7 @@ jobs:
           print(f"All artifacts downloaded successfully to {local_artifacts_dir}")
           EOF
 
-      - name: Track, Commit, and Push MLflow Artifacts to GitHub LFS
+      - name: Upload to GitHub LFS
         working-directory: MLProject
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -113,7 +114,6 @@ jobs:
           git lfs track "${LOCAL_LFS_ARTIFACTS_DIR}/**"
           git add .gitattributes || true 
           git add "${LOCAL_LFS_ARTIFACTS_DIR}/"
-          # Set remote URL to use GitHub Actions token for authentication
           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
           if ! git diff-index --quiet HEAD; then
             git commit -m "chore: Add/update all MLflow artifacts from CI run ${{ github.run_id }}"
@@ -123,10 +123,7 @@ jobs:
             echo "No new MLflow artifact changes to commit to GitHub LFS."
           fi
 
-      - name: Docker Login to Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login --username "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-
-      - name: Build Docker Model Image
+      - name: Build Docker Model
         working-directory: MLProject
         run: |
           source $(conda info --base)/etc/profile.d/conda.sh
@@ -135,6 +132,9 @@ jobs:
             --model-uri "runs:/${{ steps.get_model_run_id_for_deploy.outputs.retrieved_model_run_id }}/model" \
             --name "$DOCKER_REPO" \
             --enable-mlserver
+
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login --username "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
       - name: Tag Docker Image
         run: echo "Image built and tagged as $DOCKER_REPO:latest"
