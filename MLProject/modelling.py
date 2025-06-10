@@ -192,7 +192,6 @@ if __name__ == "__main__":
                         for k, v in best_child_run.data.params.items()
                         if k in model_params_to_extract
                     }
-                    print(f"Retrieved best parameters from run {best_child_run_id}: {best_retrain_params}")
                     mlflow.log_param("retrained_from_best_run_id", best_child_run_id) # Log source run ID
 
         except Exception as e:
@@ -211,6 +210,4 @@ if __name__ == "__main__":
 
         # 3. Call training function with the retrieved parameters
         train_and_log_model(X_train, y_train, X_test, y_test, best_retrain_params)
-        print("--- CI Automated Retraining Complete ---")
         print(ci_run.info.run_id)  # Print the current run's ID
-
