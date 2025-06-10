@@ -45,7 +45,12 @@ def train_and_log_model(X_train, y_train, X_test, y_test, params, model_name="Ra
     mlflow.log_param("warm_start", params.get("warm_start", False))
 
     params = params.copy()
-    params.pop("random_state", None)
+    # Remove all possible variants of 'random_state' key (string, int, etc.)
+    for key in list(params.keys()):
+        if key.strip().lower() == "random_state":
+            params.pop(key)
+
+    print("Params before model creation:", params)
     model = RandomForestClassifier(random_state=42, **params)
 
     # --- 2. Manually Log Training Time (1st Additional Metric) ---
