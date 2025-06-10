@@ -44,7 +44,7 @@ def train_and_log_model(X_train, y_train, X_test, y_test, params, model_name="Ra
     mlflow.log_param("warm_start", params.get("warm_start", False))
 
     # Initialize the RandomForestClassifier with the provided parameters
-    model = RandomForestClassifier(**params)
+    model = RandomForestClassifier(random_state=42, **params)
 
     # --- 2. Manually Log Training Time (1st Additional Metric) ---
     start_time = time.time()
@@ -134,11 +134,12 @@ if __name__ == "__main__":
         best_retrain_params = {}
         try:
             # Search for the latest parent tuning run
+            experiment = client.get_experiment_by_name(TUNING_EXPERIMENT_NAME)
             runs = client.search_runs(
-                experiment_names=[TUNING_EXPERIMENT_NAME],
-                filter_string=f"tags.mlflow.runName = '{PARENT_TUNING_RUN_NAME}' AND attributes.status = 'FINISHED'",
-                order_by=["attributes.start_time DESC"],
-                max_results=1
+            experiment_ids=[experiment.experiment_id],
+            filter_string=f"tags.mlflow.runName = '{PARENT_TUNING_RUN_NAME}' AND attributes.status = 'FINISHED'",
+            order_by=["attributes.start_time DESC"],
+            max_results=1
             )
 
             if not runs:
@@ -189,6 +190,9 @@ if __name__ == "__main__":
                 'n_estimators': 100, 'max_depth': 10, 'min_samples_leaf': 1,
                 'max_features': 'sqrt', 'min_samples_split': 2
             }
+
+        # Remove 'random_state' from best_retrain_params if present
+        best_retrain_params.pop('random_state', None)
 
         # Log retrieved parameters for this CI run
         mlflow.log_params(best_retrain_params)
