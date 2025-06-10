@@ -8,8 +8,8 @@ on:
 
 env:
   MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
-  MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_USERNAME }}
-  MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
+  MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_TRACKING_USERNAME }}
+  MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_TRACKING_PASSWORD }}
   DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
   DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
   DOCKER_REPO: acrola/proyek_sml_kenny
@@ -26,11 +26,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          
-      - name: Debug MLflow secrets at top
-        run: |
-          echo "MLFLOW_TRACKING_USERNAME=$MLFLOW_TRACKING_USERNAME"
-          echo "MLFLOW_TRACKING_PASSWORD is ${MLFLOW_TRACKING_PASSWORD:+set}"
 
       - name: Setup Conda Environment
         uses: conda-incubator/setup-miniconda@v3
