@@ -44,13 +44,7 @@ def train_and_log_model(X_train, y_train, X_test, y_test, params, model_name="Ra
     mlflow.log_param("verbose", params.get("verbose", 0))
     mlflow.log_param("warm_start", params.get("warm_start", False))
 
-    params = params.copy()
-    # Remove all possible variants of 'random_state' key (string, int, etc.)
-    for key in list(params.keys()):
-        if key.strip().lower() == "random_state":
-            params.pop(key)
-
-    print("Params before model creation:", params)
+    # Initialize the RandomForestClassifier with the provided parameters
     model = RandomForestClassifier(random_state=42, **params)
 
     # --- 2. Manually Log Training Time (1st Additional Metric) ---
@@ -187,9 +181,6 @@ if __name__ == "__main__":
                         for k, v in best_child_run.data.params.items()
                         if k in model_params_to_extract
                     }
-                    # Same random state for retraining consistency
-                    best_retrain_params['random_state'] = 42
-
                     print(f"Retrieved best parameters from run {best_child_run_id}: {best_retrain_params}")
                     mlflow.log_param("retrained_from_best_run_id", best_child_run_id) # Log source run ID
 
