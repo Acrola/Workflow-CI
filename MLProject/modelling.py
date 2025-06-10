@@ -209,6 +209,8 @@ if __name__ == "__main__":
         # Log retrieved parameters for this CI run
         mlflow.log_params(best_retrain_params)
 
-        # 3. Call training
-
+        # 3. Call training function with the retrieved parameters
+        train_and_log_model(X_train, y_train, X_test, y_test, best_retrain_params)
+        print("--- CI Automated Retraining Complete ---")
+        print(ci_run.info.run_id)  # Print the current run's ID
 
