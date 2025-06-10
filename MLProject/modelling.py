@@ -114,7 +114,7 @@ if __name__ == "__main__":
 
     client = mlflow.tracking.MlflowClient()
 
-    with mlflow.start_run(run_name="CI_Automated_Retrain_Run_Dynamic_Params"):
+    with mlflow.start_run(run_name="CI_Automated_Retrain_Run_Dynamic_Params") as ci_run:
         print("--- Starting CI Automated Retraining with Dynamic Parameters ---")
 
         # 1. Load the dataset
@@ -203,3 +203,6 @@ if __name__ == "__main__":
         # 3. Call training function with the retrieved parameters
         train_and_log_model(X_train, y_train, X_test, y_test, best_retrain_params)
         print("--- CI Automated Retraining Complete ---")
+        print(ci_run.info.run_id)  # Print the current run's ID
+
+
