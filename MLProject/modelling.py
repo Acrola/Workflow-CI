@@ -191,7 +191,9 @@ if __name__ == "__main__":
                 'n_estimators': 100, 'max_depth': 10, 'min_samples_leaf': 1,
                 'max_features': 'sqrt', 'min_samples_split': 2, 'random_state': 42
             }
-
+            
+        # Remove 'random_state' from best_retrain_params if present
+        best_retrain_params.pop('random_state', None)
 
         # Log retrieved parameters for this CI run
         mlflow.log_params(best_retrain_params)
