@@ -1,6 +1,7 @@
 import mlflow
 import pandas as pd
 import time
+import joblib
 import os
 import sys
 from sklearn.ensemble import RandomForestClassifier
@@ -89,6 +90,11 @@ def train_and_log_model(X_train, y_train, X_test, y_test, params, model_name="Ra
     # Save model under the current MLflow run as an artifact.
     mlflow.sklearn.log_model(model, "model", signature=mlflow.models.infer_signature(X_test, y_pred))
     print("  Model artifact logged.", file=sys.stderr)
+
+    # --- 6. Save the model locally for later use ---
+    os.makedirs("model", exist_ok=True)
+    joblib.dump(model, "model/model.joblib")
+    print("  Model saved locally to model/model.joblib", file=sys.stderr)
 
     # Return key results to the tuning script for comparison
     return {
@@ -214,4 +220,3 @@ if __name__ == "__main__":
         train_and_log_model(X_train, y_train, X_test, y_test, best_retrain_params)
         print("--- CI Automated Retraining Complete ---", file=sys.stderr)
         print(ci_run.info.run_id)  # Print only the run ID to stdout
-
