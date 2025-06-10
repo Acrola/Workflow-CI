@@ -67,20 +67,20 @@ jobs:
           echo "Running MLflow training script (modelling.py) to create a new model..."
           NEW_MLFLOW_RUN_ID=$(python modelling.py)
           echo "$NEW_MLFLOW_RUN_ID" > run_id.txt
-          
+
       - name: Get latest MLflow run_id
         id: get_model_run_id_for_deploy
         working-directory: MLProject
         run: |
           RUN_ID=$(cat run_id.txt)
-          echo "MLFLOW_RUN_ID_FOR_DEPLOY=$RUN_ID" >> $GITHUB_ENV
-          echo "Exported MLflow Run ID: $RUN_ID" >&2
+          echo "Latest MLflow Run ID: $RUN_ID" >&2
 
       - name: Download MLflow Artifacts
         working-directory: MLProject
         env:
           LOCAL_LFS_ARTIFACTS_DIR_ENV: mlflow_artifacts_for_lfs
         run: |
+          RUN_ID=$(cat run_id.txt)
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
           git lfs install --local 
@@ -92,7 +92,7 @@ jobs:
           import mlflow.artifacts
           import os
 
-          run_id = os.environ['MLFLOW_RUN_ID_FOR_DEPLOY']
+          run_id = os.environ['RUN_ID']
           local_artifacts_dir = os.environ['LOCAL_LFS_ARTIFACTS_DIR_ENV']
           mlflow.artifacts.download_artifacts(
               artifact_uri=f"runs:/{run_id}/artifacts",
@@ -122,10 +122,11 @@ jobs:
       - name: Build Docker Model
         working-directory: MLProject
         run: |
+          RUN_ID=$(cat run_id.txt)
           source $(conda info --base)/etc/profile.d/conda.sh
           conda activate mlflow-env
           mlflow models build-docker \
-            --model-uri "runs:/${{ steps.get_model_run_id_for_deploy.outputs.retrieved_model_run_id }}/model" \
+            --model-uri "runs:/$RUN_ID/model" \
             --name "$DOCKER_REPO" \
             --enable-mlserver
 
