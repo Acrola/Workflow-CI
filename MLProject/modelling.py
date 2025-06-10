@@ -40,12 +40,11 @@ def train_and_log_model(X_train, y_train, X_test, y_test, params, model_name="Ra
     mlflow.log_param("n_estimators", params.get("n_estimators", 100))
     mlflow.log_param("n_jobs", params.get("n_jobs", None))
     mlflow.log_param("oob_score", params.get("oob_score", False))
-    mlflow.log_param("random_state", params.get("random_state"))
     mlflow.log_param("verbose", params.get("verbose", 0))
     mlflow.log_param("warm_start", params.get("warm_start", False))
 
     # Initialize the RandomForestClassifier with the provided parameters
-    model = RandomForestClassifier(random_state=42, **params)
+    model = RandomForestClassifier(**params)
 
     # --- 2. Manually Log Training Time (1st Additional Metric) ---
     start_time = time.time()
@@ -191,9 +190,6 @@ if __name__ == "__main__":
                 'max_features': 'sqrt', 'min_samples_split': 2
             }
 
-        # Remove 'random_state' from best_retrain_params if present
-        best_retrain_params.pop('random_state', None)
-
         # Log retrieved parameters for this CI run
         mlflow.log_params(best_retrain_params)
 
@@ -201,3 +197,5 @@ if __name__ == "__main__":
         train_and_log_model(X_train, y_train, X_test, y_test, best_retrain_params)
         print("--- CI Automated Retraining Complete ---")
         print(ci_run.info.run_id)  # Print the current run's ID
+
+
