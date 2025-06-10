@@ -93,7 +93,7 @@ jobs:
           fi
 
       - name: Build Docker Model
-        working-directory: MLProject
+        working-directory: .
         run: |
           source $(conda info --base)/etc/profile.d/conda.sh
           conda activate mlflow-env
