@@ -177,9 +177,16 @@ if __name__ == "__main__":
                     ]
                     best_retrain_params = {
                         k: (
-                            int(v) if k in ['n_estimators', 'max_depth', 'min_samples_leaf', 'min_samples_split']
+                            int(v) if k in [
+                                'n_estimators', 'max_depth', 'min_samples_leaf', 'min_samples_split',
+                                'max_leaf_nodes', 'n_jobs', 'verbose'
+                            ] and v not in [None, 'None', '']
+                            else float(v) if k in [
+                                'ccp_alpha', 'min_impurity_decrease', 'min_weight_fraction_leaf'
+                            ] and v not in [None, 'None', '']
                             else True if v == 'True'
                             else False if v == 'False'
+                            else None if v in [None, 'None', '']
                             else v
                         )
                         for k, v in best_child_run.data.params.items()
@@ -202,9 +209,6 @@ if __name__ == "__main__":
         # Log retrieved parameters for this CI run
         mlflow.log_params(best_retrain_params)
 
-        # 3. Call training function with the retrieved parameters
-        train_and_log_model(X_train, y_train, X_test, y_test, best_retrain_params)
-        print("--- CI Automated Retraining Complete ---")
-        print(ci_run.info.run_id)  # Print the current run's ID
+        # 3. Call training
 
 
