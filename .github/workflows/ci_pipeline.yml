@@ -29,6 +29,12 @@ jobs:
           auto-update-conda: true
           python-version: '3.12'
           auto-activate-base: false
+          
+      - name: Create Conda Environment
+        working-directory: MLProject
+        run: |
+          source $(conda info --base)/etc/profile.d/conda.sh
+          conda env create -f conda.yaml || conda env update -f conda.yaml
 
       - name: Check Env
         run: |
