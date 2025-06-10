@@ -22,9 +22,6 @@ def train_and_log_model(X_train, y_train, X_test, y_test, params, model_name="Ra
     Returns:
         dict: A dictionary containing key metrics and the trained model.
     """
-    # Remove all variants of 'random_state' key (case-insensitive, whitespace-stripped)
-    params = {k: v for k, v in params.items() if k.strip().lower() != "random_state"}
-    print("Params before model creation:", params)
     print(f"  Training model with params: {params}")
 
     # --- 1. Manually Log Hyperparameters (same as autolog) ---
@@ -155,7 +152,6 @@ if __name__ == "__main__":
                     'min_samples_leaf': 1,
                     'max_features': 'sqrt',
                     'min_samples_split': 2,
-                    'random_state': 42
                 }
             else:
                 parent_run = runs[0]
@@ -166,7 +162,7 @@ if __name__ == "__main__":
                     print("Proceeding with default parameters as a fallback.")
                     best_retrain_params = {
                         'n_estimators': 100, 'max_depth': 10, 'min_samples_leaf': 1,
-                        'max_features': 'sqrt', 'min_samples_split': 2, 'random_state': 42
+                        'max_features': 'sqrt', 'min_samples_split': 2
                     }
                 else:
                     # Fetch the best child run to get its parameters
@@ -192,9 +188,9 @@ if __name__ == "__main__":
             print("Proceeding with default parameters as a fallback.")
             best_retrain_params = {
                 'n_estimators': 100, 'max_depth': 10, 'min_samples_leaf': 1,
-                'max_features': 'sqrt', 'min_samples_split': 2, 'random_state': 42
+                'max_features': 'sqrt', 'min_samples_split': 2
             }
-            
+
         # Remove 'random_state' from best_retrain_params if present
         best_retrain_params.pop('random_state', None)
 
@@ -205,5 +201,3 @@ if __name__ == "__main__":
         train_and_log_model(X_train, y_train, X_test, y_test, best_retrain_params)
         print("--- CI Automated Retraining Complete ---")
         print(ci_run.info.run_id)  # Print the current run's ID
-
-
