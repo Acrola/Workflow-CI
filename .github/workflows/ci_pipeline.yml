@@ -66,6 +66,8 @@ jobs:
           MLFLOW_TRACKING_USERNAME: ${{ env.MLFLOW_TRACKING_USERNAME }}
           MLFLOW_TRACKING_PASSWORD: ${{ env.MLFLOW_TRACKING_PASSWORD }}
         run: |
+          source $(conda info --base)/etc/profile.d/conda.sh
+          conda activate mlflow-env
           mlflow run . -e main
 
       - name: Get latest MLflow run_id
@@ -76,6 +78,8 @@ jobs:
           MLFLOW_TRACKING_USERNAME: ${{ env.MLFLOW_TRACKING_USERNAME }}
           MLFLOW_TRACKING_PASSWORD: ${{ env.MLFLOW_TRACKING_PASSWORD }}
         run: |
+          source $(conda info --base)/etc/profile.d/conda.sh
+          conda activate mlflow-env
           # Get the latest run_id for the experiment
           EXPERIMENT_NAME="DiabetesPredictionCI"
           RUN_ID=$(mlflow runs list -e "$EXPERIMENT_NAME" --order-by start_time desc | awk 'NR==2{print $1}')
