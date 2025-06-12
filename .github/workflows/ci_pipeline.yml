@@ -59,16 +59,15 @@ jobs:
           pip install mlflow  # Ensure mlflow CLI is available
 
       - name: Run MLflow Project
-        id: run_mlflow_project
         working-directory: MLProject
         env:
-          MLFLOW_TRACKING_URI: ${{ env.MLFLOW_TRACKING_URI }}
-          MLFLOW_TRACKING_USERNAME: ${{ env.MLFLOW_TRACKING_USERNAME }}
-          MLFLOW_TRACKING_PASSWORD: ${{ env.MLFLOW_TRACKING_PASSWORD }}
+          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+          MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_TRACKING_USERNAME }}
+          MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_TRACKING_PASSWORD }}
         run: |
           source $(conda info --base)/etc/profile.d/conda.sh
           conda activate mlflow-env
-          mlflow run . -e main
+          mlflow run . -e main --experiment-name "Diabetes_Prediction_CI_Retraining"
 
       - name: Get latest MLflow run_id
         id: get_model_run_id_for_deploy
