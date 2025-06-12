@@ -3,7 +3,7 @@ name: CI/CD MLflow Pipeline - Auto Retrain & Deploy
 on:
   push:
     branches:
-      - test
+      - main
   workflow_dispatch:
 
 env:
@@ -67,7 +67,7 @@ jobs:
         run: |
           source $(conda info --base)/etc/profile.d/conda.sh
           conda activate mlflow-env
-          mlflow run . -e main --experiment-name "Diabetes_Prediction_CI_Retraining"
+          mlflow run . --experiment-name "Diabetes_Prediction_CI_Retraining"
 
       - name: Get latest MLflow run_id
         id: get_model_run_id_for_deploy
