@@ -51,12 +51,7 @@ def train_and_log_model(X_train, y_train, X_test, y_test, params, model_name="Ra
     mlflow.log_metric("test_specificity", specificity)
     print(f"  Test Accuracy: {accuracy_score(y_test, y_pred):.4f}, F1: {f1_score(y_test, y_pred):.4f}, Specificity: {specificity:.4f}", file=sys.stderr)
 
-    # --- 5. Log the Model Artifact ---
-    # Save model under the current MLflow run as an artifact.
-    mlflow.sklearn.log_model(model, "model", signature=mlflow.models.infer_signature(X_test, y_pred))
-    print("  Model artifact logged.", file=sys.stderr)
-
-    # --- 6. Save the model locally for later use ---
+    # --- 5. Save the model locally for later use ---
     mlflow.sklearn.save_model(model, "../model")
     print("  Model saved locally as MLflow model in ../model/", file=sys.stderr)
 
