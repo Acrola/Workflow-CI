@@ -59,6 +59,7 @@ jobs:
           pip install mlflow  # Ensure mlflow CLI is available
 
       - name: Run MLflow Project
+        id: run_mlflow_project
         working-directory: MLProject
         env:
           MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
@@ -67,12 +68,13 @@ jobs:
         run: |
           source $(conda info --base)/etc/profile.d/conda.sh
           conda activate mlflow-env
-          mlflow run . --experiment-name "Diabetes_Prediction_CI_Retraining"
-
-      - name: Get latest MLflow run_id
-        id: get_model_run_id_for_deploy
+          mlflow run . --experiment-name "Diabetes_Prediction_CI_Retraining" | tee mlflow_run_output.log
+      
+      - name: Extract MLflow run_id from output
+        id: extract_run_id
+        working-directory: MLProject
         run: |
-          RUN_ID=$(echo "${{ steps.run_mlflow_project.outputs.stdout }}" | grep -oE '[a-f0-9]{32}' | tail -n 1)
+          RUN_ID=$(grep -oE '^[a-f0-9]{32}$' mlflow_run_output.log | tail -n 1)
           echo "Extracted MLflow Run ID: $RUN_ID"
           echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
 
