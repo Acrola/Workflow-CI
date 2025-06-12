@@ -4,6 +4,7 @@ import pandas as pd
 import time
 import os
 import sys
+import shutil
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score, roc_auc_score,
@@ -88,6 +89,13 @@ def train_and_log_model(X_train, y_train, X_test, y_test, params, model_name="Ra
     # Save model under the current MLflow run as an artifact.
     mlflow.sklearn.log_model(model, "model", signature=mlflow.models.infer_signature(X_test, y_pred))
     print("  Model artifact logged.")
+
+    # Save model to local 'model/' directory for GitHub LFS
+    local_model_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../model"))
+    if os.path.exists(local_model_dir):
+        shutil.rmtree(local_model_dir)
+    mlflow.sklearn.save_model(model, local_model_dir)
+    print(f"  Model saved locally to {local_model_dir}")
 
     # Return key results to the tuning script for comparison
     return {
