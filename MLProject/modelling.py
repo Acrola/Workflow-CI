@@ -110,7 +110,6 @@ if __name__ == "__main__":
         if not runs:
             print(f"Warning: No parent tuning run found with name '{PARENT_TUNING_RUN_NAME}' in experiment '{TUNING_EXPERIMENT_NAME}'.")
             print("Proceeding with default parameters as a fallback.")
-            # Fallback to a reasonable set of default parameters if no tuning run is found
             best_retrain_params = {
                 'n_estimators': 100,
                 'max_depth': 10,
@@ -132,7 +131,6 @@ if __name__ == "__main__":
             else:
                 # Fetch the best child run to get its parameters
                 best_child_run = client.get_run(best_child_run_id)
-                # Filter for actual model hyperparameters, and convert types if necessary
                 model_params_to_extract = [
                     'n_estimators', 'max_depth', 'min_samples_leaf', 'max_features',
                     'min_samples_split', 'bootstrap', 'ccp_alpha', 'class_weight',
@@ -158,7 +156,9 @@ if __name__ == "__main__":
                     if k in model_params_to_extract
                 }
                 print(f"Retrieved best parameters from run {best_child_run_id}: {best_retrain_params}", file=sys.stderr)
-                mlflow.log_param("retrained_from_best_run_id", best_child_run_id) # Log source run ID
+                # Log the source run ID as an extra param (optional, only if in active run)
+                if mlflow.active_run():
+                    mlflow.log_param("retrained_from_best_run_id", best_child_run_id)
 
     except Exception as e:
         print(f"An error occurred while retrieving best parameters from MLflow: {e}", file=sys.stderr)
@@ -171,8 +171,9 @@ if __name__ == "__main__":
     # Remove 'random_state' from best_retrain_params if present
     best_retrain_params.pop('random_state', None)
 
-    # Log retrieved parameters for this CI run
-    mlflow.log_params(best_retrain_params)
+    # Log retrieved parameters for this CI run (optional, only if in active run)
+    if mlflow.active_run():
+        mlflow.log_params(best_retrain_params)
 
     # 3. Call training function with the retrieved parameters
     train_and_log_model(X_train, y_train, X_test, y_test, best_retrain_params)
