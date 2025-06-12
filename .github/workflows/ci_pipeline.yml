@@ -71,18 +71,9 @@ jobs:
 
       - name: Get latest MLflow run_id
         id: get_model_run_id_for_deploy
-        working-directory: MLProject
-        env:
-          MLFLOW_TRACKING_URI: ${{ env.MLFLOW_TRACKING_URI }}
-          MLFLOW_TRACKING_USERNAME: ${{ env.MLFLOW_TRACKING_USERNAME }}
-          MLFLOW_TRACKING_PASSWORD: ${{ env.MLFLOW_TRACKING_PASSWORD }}
         run: |
-          source $(conda info --base)/etc/profile.d/conda.sh
-          conda activate mlflow-env
-          # Get the latest run_id for the experiment
-          EXPERIMENT_NAME="DiabetesPredictionCI"
-          RUN_ID=$(mlflow runs list -e "$EXPERIMENT_NAME" --order-by start_time desc | awk 'NR==2{print $1}')
-          echo "Latest MLflow Run ID: $RUN_ID"
+          RUN_ID=$(echo "${{ steps.run_mlflow_project.outputs.stdout }}" | grep -oE '[a-f0-9]{32}' | tail -n 1)
+          echo "Extracted MLflow Run ID: $RUN_ID"
           echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
 
       - name: Upload to GitHub LFS
