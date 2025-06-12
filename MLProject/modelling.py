@@ -26,11 +26,27 @@ def train_and_log_model(X_train, y_train, X_test, y_test, params, model_name="Ra
     """
     print(f"  Training model with params: {params}", file=sys.stderr)
 
-    # --- 1. Log Hyperparameters and metrics---
-    mlflow.autolog()
+    # --- 1. Manually Log Hyperparameters (same as autolog) ---
+    mlflow.log_param("bootstrap", params.get("bootstrap", True))
+    mlflow.log_param("ccp_alpha", params.get("ccp_alpha", 0.0))
+    mlflow.log_param("class_weight", params.get("class_weight", None))
+    mlflow.log_param("criterion", params.get("criterion", "gini"))
+    mlflow.log_param("max_depth", params.get("max_depth", None))
+    mlflow.log_param("max_features", params.get("max_features", "sqrt"))
+    mlflow.log_param("max_leaf_nodes", params.get("max_leaf_nodes", None))
+    mlflow.log_param("min_samples_leaf", params.get("min_samples_leaf", 1))
+    mlflow.log_param("min_samples_split", params.get("min_samples_split", 2))
+    mlflow.log_param("min_impurity_decrease", params.get("min_impurity_decrease", 0.0))
+    mlflow.log_param("min_weight_fraction_leaf", params.get("min_weight_fraction_leaf", 0.0))
+    mlflow.log_param("monotonic_cst", params.get("monotonic_cst", None))
+    mlflow.log_param("n_estimators", params.get("n_estimators", 100))
+    mlflow.log_param("n_jobs", params.get("n_jobs", None))
+    mlflow.log_param("oob_score", params.get("oob_score", False))
+    mlflow.log_param("random_state", params.get("random_state", 42)) # For reproducibility
+    mlflow.log_param("verbose", params.get("verbose", 0))
+    mlflow.log_param("warm_start", params.get("warm_start", False))
 
-    # Initialize the RandomForestClassifier with the provided parameters
-    model = RandomForestClassifier(random_state=42, **params)
+    model = RandomForestClassifier(random_state=42, **params) # Apply the passed parameters
 
     # --- 2. Manually Log Training Time (1st Additional Metric) ---
     start_time = time.time()
@@ -38,22 +54,42 @@ def train_and_log_model(X_train, y_train, X_test, y_test, params, model_name="Ra
     end_time = time.time()
     training_duration = end_time - start_time
     mlflow.log_metric("training_duration_seconds", training_duration)
-    print(f"  Training took {training_duration:.2f} seconds.", file=sys.stderr)
+    print(f"  Training took {training_duration:.2f} seconds.")
 
-    # --- 3. Predict probabilities for log_loss and roc_auc ---
+    # Predict probabilities for log_loss and roc_auc
     y_pred_proba = model.predict_proba(X_test)
     y_pred = model.predict(X_test)
+
+    # --- 3. Manually Log Metrics (same as autolog) ---
+    mlflow.log_metric("test_accuracy_score", accuracy_score(y_test, y_pred))
+    mlflow.log_metric("test_f1_score", f1_score(y_test, y_pred))
+    mlflow.log_metric("test_log_loss", log_loss(y_test, y_pred_proba))
+    mlflow.log_metric("test_precision_score", precision_score(y_test, y_pred))
+    mlflow.log_metric("test_recall_score", recall_score(y_test, y_pred))
+    mlflow.log_metric("test_roc_auc", roc_auc_score(y_test, y_pred_proba[:, 1]))
+    print(f"  Test Accuracy: {accuracy_score(y_test, y_pred):.4f}, F1: {f1_score(y_test, y_pred):.4f}, ROC AUC: {roc_auc_score(y_test, y_pred_proba[:, 1]):.4f}")
+    # Also log training metrics
+    mlflow.log_metric("training_accuracy_score", accuracy_score(y_train, model.predict(X_train)))
+    mlflow.log_metric("training_f1_score", f1_score(y_train, model.predict(X_train)))
+    mlflow.log_metric("training_log_loss", log_loss(y_train, model.predict_proba(X_train)))
+    mlflow.log_metric("training_precision_score", precision_score(y_train, model.predict(X_train)))
+    mlflow.log_metric("training_recall_score", recall_score(y_train, model.predict(X_train)))
+    mlflow.log_metric("training_roc_auc", roc_auc_score(y_train, model.predict_proba(X_train)[:, 1]))
+    print(f"  Training Accuracy: {accuracy_score(y_train, model.predict(X_train)):.4f}, F1: {f1_score(y_train, model.predict(X_train)):.4f}, ROC AUC: {roc_auc_score(y_train, model.predict_proba(X_train)[:, 1]):.4f}")
+
 
     # --- 4. Manually Log Specificity (2nd Additional Metric) ---
     tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
     # Handle potential division by zero if (tn + fp) is 0
     specificity = tn / (tn + fp) if (tn + fp) != 0 else 0.0
     mlflow.log_metric("test_specificity", specificity)
-    print(f"  Test Accuracy: {accuracy_score(y_test, y_pred):.4f}, F1: {f1_score(y_test, y_pred):.4f}, Specificity: {specificity:.4f}", file=sys.stderr)
+    print(f"  Test Accuracy: {accuracy_score(y_test, y_pred):.4f}, F1: {f1_score(y_test, y_pred):.4f}, Specificity: {specificity:.4f}")
 
-    # --- 5. Save the model locally for later use ---
-    mlflow.sklearn.save_model(model, "../model")
-    print("  Model saved locally as MLflow model in ../model/", file=sys.stderr)
+
+    # --- 5. Log the Model Artifact ---
+    # Save model under the current MLflow run as an artifact.
+    mlflow.sklearn.log_model(model, "model", signature=mlflow.models.infer_signature(X_test, y_pred))
+    print("  Model artifact logged.")
 
     # Return key results to the tuning script for comparison
     return {
