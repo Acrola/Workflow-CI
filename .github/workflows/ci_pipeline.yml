@@ -70,8 +70,8 @@ jobs:
           conda activate mlflow-env
           mlflow run . --experiment-name "Diabetes_Prediction_CI_Retraining" | tee mlflow_run_output.log
       
-      - name: Extract MLflow run_id from output
-        id: extract_run_id
+      - name: Get latest MLflow run_id
+        id: get_model_run_id_for_deploy
         working-directory: MLProject
         run: |
           RUN_ID=$(grep -oE '^[a-f0-9]{32}$' mlflow_run_output.log | tail -n 1)
