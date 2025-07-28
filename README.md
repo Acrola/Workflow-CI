@@ -1,3 +1,3 @@
 # Workflow-CI
 
-CI Automated Retraining Repository for Dicoding SMSL Project
+CI Automated Retraining Repository for Dicoding MSML Project
